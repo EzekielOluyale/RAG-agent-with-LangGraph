@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  rag_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: production_rag_agent
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: always
+    # The volumes section ensures your local virtual environment doesn't break the Linux container
+    volumes:
+      - .:/app
+      - /app/.venv/
+      - /app/venv/

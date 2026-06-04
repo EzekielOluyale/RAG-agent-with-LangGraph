@@ -1,0 +1,18 @@
+# Python caches and environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git history
+.git/
+.gitignore
+
+# Environment secrets (Never copy raw secrets directly into the image)
+.env
+
+# Docker config files
+Dockerfile
+docker-compose.yml
