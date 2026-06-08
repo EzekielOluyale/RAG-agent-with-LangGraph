@@ -14,17 +14,19 @@ logger = logging.getLogger(__name__)
 response_model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     vertexai=True,
-    temperature=0
+    temperature=0,
+    timeout=60
 )
 
 grader_model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     vertexai=True,
-    temperature=0
+    temperature=0,
+    timeout=60
 )
 
 def create_retriever_tool(vectorstore):
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 
     @tool
     def retrieve_personal_data(query: str) -> str:
