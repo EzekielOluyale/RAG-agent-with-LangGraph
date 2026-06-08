@@ -24,20 +24,3 @@ def get_vector_store():
         embedding=embeddings,
         index=index
     )
-
-
-def get_checkpointer():
-    try:
-        DB_URI = os.getenv("DATABASE_URL")
-        if not DB_URI:
-            logger.error("DATABASE_URL environment variable is missing!")
-            raise ValueError("DATABASE_URL environment variable is missing!")
-        logger.info("Connecting to Supabase checkpointer database...")
-        checkpointer = PostgresSaver.from_conn_string(DB_URI)
-        checkpointer.setup()
-        logger.info("Database checkpointer initialized successfully.")
-        return checkpointer
-
-    except Exception as e:
-        logger.exception(f"Failed to initialize checkpointer: {e}")
-        raise
