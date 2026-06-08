@@ -1,17 +1,28 @@
 # Python caches and environments
-.venv/
-venv/
+.env
+.venv
+venv
+env
+ENV
+*/.venv
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
+.ipynb_checkpoints/
 
-# Git history
+# Git 
 .git/
 .gitignore
 
-# Environment secrets (Never copy raw secrets directly into the image)
-.env
+# Local Logs and data
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
 
 # Docker config files
 Dockerfile
