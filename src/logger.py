@@ -1,20 +1,31 @@
 import logging
-import os
 import sys
+from pathlib import Path
 from datetime import datetime
 
-LOG_FILE=f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-log_path=os.path.join(os.getcwd(), "logs")
-os.makedirs(log_path, exist_ok=True)
-LOG_FILE_PATH = os.path.join(log_path, LOG_FILE)
+# Project Root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-log_format = logging.Formatter('[%(asctime)s] %(lineno)d %(name)s - %(levelname)s - %(message)s')
+# Logs Directory
+LOG_DIR = PROJECT_ROOT / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+# Log File
+LOG_FILE = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+LOG_FILE_PATH = LOG_DIR / LOG_FILE
+
+# Formatter
+LOG_FORMAT = logging.Formatter(
+    "[%(asctime)s] %(lineno)d %(name)s - %(levelname)s - %(message)s"
+)
+
+# File Handler
 file_handler = logging.FileHandler(LOG_FILE_PATH)
-file_handler.setFormatter(log_format)
+file_handler.setFormatter(LOG_FORMAT)
 
+# Console Handler
 console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setFormatter(log_format)
+console_handler.setFormatter(LOG_FORMAT)
 
 logging.basicConfig(
     level=logging.INFO,
