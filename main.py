@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
     pool = ConnectionPool(
         DB_URI, 
-        kwargs={"autocommit": True}
+        kwargs={"autocommit": True, "prepare_threshold": None}
     )
     checkpointer = PostgresSaver(pool)
     checkpointer.setup() 
