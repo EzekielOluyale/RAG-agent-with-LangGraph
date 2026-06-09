@@ -83,9 +83,9 @@ GENERATE_PROMPT = (
     "<context>\n{context}\n</context>"
 )
 
-def build_agent(vectorstore, checkpointer=None):
+def build_agent(vector_store, checkpointer=None):
     logger.info("Building agent workflow...")
-    retriever_tool = create_retriever_tool(vectorstore)
+    retriever_tool = create_retriever_tool(vector_store)
 
     # Generate Query
     def generate_query_or_respond(state: MessagesState):
