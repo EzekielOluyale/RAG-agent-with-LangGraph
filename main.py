@@ -15,7 +15,6 @@ from src.agent import build_agent
 from langgraph.checkpoint.postgres import PostgresSaver
 from fastapi.concurrency import run_in_threadpool
 from psycopg_pool import ConnectionPool
-from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ async def lifespan(app: FastAPI):
 
     pool = ConnectionPool(
         DB_URI, 
-        kwargs={"autocommit": True, "row_factory": dict_row}
+        kwargs={"autocommit": True}
     )
     checkpointer = PostgresSaver(pool)
     checkpointer.setup() 
