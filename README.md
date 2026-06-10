@@ -20,6 +20,7 @@ This is a chatbot built to answer questions about my resume and professional bac
        /              \
       ▼                ▼
 4. Give Final Answer   5. Rewrite the Question (Fix search term & loop back to Step 1)
+```
 
 - Understand the Question: The chatbot checks if your question is about Ezekiel. If you ask about something random (like a cooking recipe), it will politely say no.
 
