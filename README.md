@@ -47,11 +47,13 @@ git clone [https://github.com/EzekielOluyale/RAG-agent-with-LangGraph.git](https
 cd RAG-agent-with-LangGraph
 ```
 Add your secret keys: Create a file named .env in the root folder and add your keys
+```
 GOOGLE_API_KEY=your_gemini_api_key_here
 PINECONE_API_KEY=your_pinecone_api_key_here
 PINECONE_INDEX_NAME=your_index_name_here
 DATABASE_URL=your_supabase_url
 BACKEND_URL=your_fastapi_url
+```
 
 ## Installing
 To install all required dependencies:
