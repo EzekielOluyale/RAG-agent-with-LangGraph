@@ -96,10 +96,20 @@ def build_agent(vector_store, checkpointer=None):
         config = get_config()
         thread_id = config["configurable"].get("thread_id", "unknown")
 
+        SYSTEM_PROMPT = (
+            "You are a professional assistant representing Ezekiel Oluyale. "
+            "Your sole purpose is to provide information based strictly on his resume and professional background. "
+            "If a user asks a question unrelated to his resume "
+            "politely decline to answer and redirect them to his professional background. "
+            "Do not answer general knowledge questions or act as a general-purpose AI."
+        )
+
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}] + state["messages"]
+
         logger.info(f"[Thread: {thread_id}] Generating response or retrieval query.")
         response = (
             response_model
-            .bind_tools([retriever_tool]).invoke(state["messages"])
+            .bind_tools([retriever_tool]).invoke(messages)
         )
         return {"messages": [response]}
 
