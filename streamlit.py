@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import uuid
-
+import json
 import os
 from dotenv import load_dotenv
 
@@ -26,29 +26,50 @@ if prompt := st.chat_input("Ask me anything..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     # Render FastAPI endpoint
-    backend_url = os.getenv("BACKEND_URL")
+    streaming_url = os.getenv("STREAMING_URL")
     
     payload = {
         "message": prompt,
         "thread_id": st.session_state.thread_id
     }
 
-    try:
-        response = requests.post(backend_url, json=payload)
-    
-        if response.status_code == 200:
-            response_json = response.json()
-            
-            ai_response = response_json.get("answer", "Error: 'answer' key missing from backend data.")
-        
-        else:
-            ai_response = f"Backend Server Error (Status {response.status_code}): {response.text}"
-            
-    except requests.exceptions.RequestException as network_error:
-        ai_response = f"Connection failure. Render service may be warming up. Error details: {network_error}"
-
     with st.chat_message("assistant"):
-        st.markdown(ai_response)
+        
+        # Generator function to stream tokens from FastAPI to Streamlit
+        def generate_tokens():
+            try:
+                # stream=True keeps the HTTP connection open
+                response = requests.post(streaming_url, json=payload, stream=True)
+                response.raise_for_status()
+
+                # Iterate through the Server-Sent Events (SSE)
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        
+                        # Check if the line is an SSE data packet
+                        if decoded_line.startswith("data: "):
+                            data_str = decoded_line[6:] # Strip out the "data: " prefix
+                            
+                            if data_str == "[DONE]":
+                                break
+                            
+                            try:
+                                json_data = json.loads(data_str)
+                                
+                                if "token" in json_data:
+                                    yield json_data["token"]
+                                elif "error" in json_data:
+                                    yield f"\n\n**Error:** {json_data['error']}"
+                                    
+                            except json.JSONDecodeError:
+                                continue 
+
+            except requests.exceptions.RequestException as network_error:
+                yield f"Connection failure. Render service may be warming up. Error details: {network_error}"
+
+        ai_response = st.write_stream(generate_tokens())
+
     st.session_state.messages.append({"role": "assistant", "content": ai_response})
 
     
