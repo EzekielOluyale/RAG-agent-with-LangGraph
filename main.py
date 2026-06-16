@@ -1,9 +1,11 @@
 import src.logger  
 import logging
 import os
+import json
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage
@@ -89,6 +91,42 @@ async def health_check():
         "pinecone": True,
         "agent": True
     }
+
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    if not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+        
+    log_prefix = f"[Thread: {request.thread_id}]"
+    agent = app.state.agent 
+    config = {"configurable": {"thread_id": request.thread_id}}
+
+    logger.info(f"{log_prefix} Processing streaming chat request.")
+
+    async def sse_generator():
+        try:
+            async for chunk in agent.astream(
+                {"messages": [HumanMessage(content=request.message)]}, 
+                config=config, 
+                stream_mode="messages", 
+                version="v2"
+            ):
+                if chunk["type"] == "messages":
+                    message_chunk, metadata = chunk["data"]
+                    
+                    if message_chunk.content:
+                        payload = json.dumps({"token": message_chunk.content})
+                        yield f"data: {payload}\n\n"
+            
+            yield "data: [DONE]\n\n"
+            
+        except Exception as e:
+            logger.error(f"{log_prefix} CRITICAL API ERROR IN STREAM: {str(e)}", exc_info=True)
+            error_payload = json.dumps({"error": "An error occurred during generation."})
+            yield f"data: {error_payload}\n\n"
+            yield "data: [DONE]\n\n"
+            
+    return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
