@@ -26,7 +26,7 @@ grader_model = ChatGoogleGenerativeAI(
 )
 
 def create_retriever_tool(vectorstore):
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 
     @tool
     def retrieve_personal_data(query: str) -> str:
@@ -97,9 +97,11 @@ def build_agent(vector_store, checkpointer=None):
         thread_id = config["configurable"].get("thread_id", "unknown")
 
         SYSTEM_PROMPT = (
-            "You are a professional assistant representing Ezekiel Oluyale. "
+            "You are a professional assistant for Ezekiel Oluyale. "
             "Your sole purpose is to provide information based strictly on his resume and professional background. "
             "STRICT GUIDELINES: "
+            "Synthesize information. Do not just copy-paste chunks of text."
+            "Use clean formatting (bullet points, bold headings) for readability."
             "Be concise and professional. "
             "Do NOT include conversational filler, pleasantries, or introductory sentences like 'Thank you for...' or 'I can tell you...'. "
             "Get straight to the point of the user's question. "
