@@ -122,9 +122,15 @@ async def chat_stream(request: ChatRequest):
                 if chunk["type"] == "messages":
                     message_chunk, metadata = chunk["data"]
                     
-                    if message_chunk.content:
-                        payload = json.dumps({"token": message_chunk.content})
-                        yield f"data: {payload}\n\n"
+                    if message_chunk.content and isinstance(message_chunk.content, str):
+                        content = message_chunk.content.strip()
+                        
+                        if content.startswith("{") and "binary_score" in content:
+                            continue
+                            
+                        if content:
+                            payload = json.dumps({"token": message_chunk.content})
+                            yield f"data: {payload}\n\n"
             
             yield "data: [DONE]\n\n"
             
