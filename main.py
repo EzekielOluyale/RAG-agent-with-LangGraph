@@ -116,21 +116,17 @@ async def chat_stream(request: ChatRequest):
             async for chunk in agent.astream(
                 {"messages": [HumanMessage(content=request.message)]}, 
                 config=config, 
-                stream_mode="messages", 
+                stream_mode=["messages", "custom"], 
                 version="v2"
             ):
                 if chunk["type"] == "messages":
-                    message_chunk, metadata = chunk["data"]
+                    message, metadata = chunk["data"]
                     
-                    if message_chunk.content and isinstance(message_chunk.content, str):
-                        content = message_chunk.content.strip()
-                        
-                        if content.startswith("{") and "binary_score" in content:
-                            continue
-                            
-                        if content:
-                            payload = json.dumps({"token": message_chunk.content})
-                            yield f"data: {payload}\n\n"
+                    if isinstance(message.content, str) and message.content:
+                        yield f"data: {json.dumps({'type': 'token', 'content': message.content})}\n\n"
+
+                    elif chunk["type"] == "custom":
+                        yield f"data: {json.dumps({'type': 'status', 'content': chunk['data']})}\n\n"
             
             yield "data: [DONE]\n\n"
             
