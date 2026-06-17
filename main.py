@@ -14,9 +14,9 @@ from src.utils import setup_environment
 from src.database import get_vector_store
 from src.agent import build_agent
 
-from langgraph.checkpoint.postgres import PostgresSaver
-from fastapi.concurrency import run_in_threadpool
-from psycopg_pool import ConnectionPool
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool
+from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
@@ -32,21 +32,29 @@ async def lifespan(app: FastAPI):
         logger.error("DATABASE_URL environment variable is missing!")
         raise ValueError("DATABASE_URL environment variable is missing!")
 
-    pool = ConnectionPool(
+    async with AsyncConnectionPool(
         DB_URI, 
-        kwargs={"autocommit": True, "prepare_threshold": None}
-    )
-    checkpointer = PostgresSaver(pool)
-    checkpointer.setup() 
-    logger.info("Database checkpointer tables verified successfully.")
+        kwargs={
+            "autocommit": True, 
+            "prepare_threshold": None,
+            "row_factory": dict_row  # THIS IS MANDATORY FOR LANGGRAPH
+        }
+    ) as pool:
+        
+        # 3. USE ASYNC SAVER AND AWAIT SETUP
+        checkpointer = AsyncPostgresSaver(pool)
+        await checkpointer.setup() 
+        logger.info("Database checkpointer tables verified successfully.")
 
-    app.state.agent = build_agent(vector_store=vector_store, checkpointer=checkpointer)
-    app.state.db_pool = pool
-    
-    logger.info("Application started successfully and listening for traffic.")
-    yield
-    logger.info("Application shutting down...")
-    app.state.db_pool.close()
+        app.state.agent = build_agent(vector_store=vector_store, checkpointer=checkpointer)
+        app.state.db_pool = pool
+        
+        logger.info("Application started successfully and listening for traffic.")
+        
+        # Pause here while the app runs
+        yield
+        
+        logger.info("Application shutting down...")
 
 app = FastAPI(
     title="RAG Agent API",
@@ -125,7 +133,7 @@ async def chat_stream(request: ChatRequest):
             error_payload = json.dumps({"error": "An error occurred during generation."})
             yield f"data: {error_payload}\n\n"
             yield "data: [DONE]\n\n"
-            
+
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 @app.post("/chat", response_model=ChatResponse)
@@ -141,8 +149,7 @@ async def chat(request: ChatRequest):
 
         logger.info(f"{log_prefix} Processing chat request.")
         
-        response = await run_in_threadpool(
-            agent.invoke,
+        response = await agent.ainvoke(
             {"messages": [HumanMessage(content=request.message)]},
             config
         )
